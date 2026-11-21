@@ -1,0 +1,136 @@
+{
+  "name": "block-arduino",
+  "productName": "Block Arduino",
+  "version": "0.1.0",
+  "description": "Program an Arduino by snapping blocks together, like Scratch, with one-click Smart Upload.",
+  "main": "src/main/main.js",
+  "homepage": "https://github.com/",
+  "author": {
+    "name": "Block Arduino contributors",
+    "email": "noreply@example.com"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/generate.js && node test/unit.js && bash test/sim/run.sh",
+    "dist:linux": "electron-builder --linux",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "fetch-cli": "node tools/fetch-arduino-cli.js"
+  },
+  "dependencies": {
+    "blockly": "^11.2.2"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "io.github.blockarduino.app",
+    "productName": "Block Arduino",
+    "artifactName": "Block-Arduino-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "build/icon.png",
+      "package.json",
+      "node_modules/blockly/blockly_compressed.js",
+      "node_modules/blockly/blocks_compressed.js",
+      "node_modules/blockly/msg/en.js",
+      "node_modules/blockly/media/**/*",
+      "node_modules/blockly/package.json",
+      "!node_modules/blockly/**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/libraries",
+        "to": "libraries"
+      },
+      {
+        "from": "vendor/arduino-cli/${os}-${arch}",
+        "to": "bin"
+      }
+    ],
+    "fileAssociations": [
+      {
+        "ext": "bard",
+        "name": "Block Arduino Project",
+        "role": "Editor"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.education",
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "identity": null
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Education",
+      "icon": "build/icon.png",
+      "maintainer": "Block Arduino contributors <noreply@example.com>"
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnss3",
+        "libxss1",
+        "libasound2"
+      ]
+    },
+    "publish": [],
+    "afterPack": "build/after-pack.js"
+  }
+}

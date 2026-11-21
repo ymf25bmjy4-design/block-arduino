@@ -1,0 +1,41 @@
+# Publishes the downloads / version history site in docs/ to GitHub Pages.
+# The page reads the GitHub Releases API in the browser, so new releases
+# appear without redeploying; this workflow also reruns on each release.
+name: Deploy downloads page
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**', 'CHANGELOG.md', '.github/workflows/pages.yml']
+  release:
+    types: [published, edited, deleted]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Snapshot releases (fallback if the API is rate-limited)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > docs/releases.json || echo "[]" > docs/releases.json
+          cp CHANGELOG.md docs/CHANGELOG.md
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: docs }
+      - id: deployment
+        uses: actions/deploy-pages@v4

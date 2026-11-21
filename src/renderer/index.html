@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; media-src 'self' data:; font-src 'self' data:">
+  <title>Block Arduino</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand" title="Block Arduino">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
+        <rect x="2" y="6" width="28" height="20" rx="5" fill="#2bb673"/>
+        <rect x="6" y="10" width="9" height="6" rx="2" fill="#fff"/>
+        <rect x="17" y="16" width="9" height="6" rx="2" fill="#fff" opacity=".8"/>
+        <circle cx="25" cy="11" r="2" fill="#ffd34d"/>
+      </svg>
+      <span>Block Arduino</span>
+    </div>
+    <input id="projectName" value="My project" spellcheck="false" aria-label="Project name">
+    <div class="tb-group">
+      <button id="btnNew" class="tb" title="New project">New</button>
+      <button id="btnOpen" class="tb" title="Open project">Open</button>
+      <button id="btnSave" class="tb" title="Save project">Save</button>
+      <button id="btnStarters" class="tb" title="Starter projects">Starters</button>
+    </div>
+    <div class="spacer"></div>
+    <label class="board-pick" title="Which board are you using?">
+      <span class="board-icon" aria-hidden="true">▣</span>
+      <select id="boardSelect" aria-label="Board"></select>
+    </label>
+    <div id="status" class="status" title="Board status">
+      <span class="light grey"></span><span id="statusText">No board</span>
+    </div>
+    <button id="btnVerify" class="tb outline" title="Build without uploading (Ctrl+R)">✓ Verify</button>
+    <button id="btnUpload" class="upload" title="Build and upload to the board (Ctrl+U)">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 3l6 6h-4v6h-4V9H6l6-6zM5 18h14v3H5z"/></svg>
+      Upload
+    </button>
+  </header>
+
+  <div id="banner" class="banner hidden"></div>
+
+  <main id="main">
+    <section id="workspaceWrap">
+      <div id="searchBox">
+        <input id="blockSearch" placeholder="Find a block… (servo, lcd)" spellcheck="false" aria-label="Search blocks">
+      </div>
+      <div id="blocklyDiv"></div>
+      <div id="wsTools">
+        <button id="btnUndo" title="Undo">↶</button>
+        <button id="btnRedo" title="Redo">↷</button>
+        <button id="btnCleanup" title="Tidy up scripts">⊞</button>
+        <button id="btnPins" title="Pin map for this board">Pins</button>
+      </div>
+    </section>
+
+    <div id="splitter" title="Drag to resize"></div>
+
+    <aside id="side">
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="code" role="tab">Code</button>
+        <button class="tab" data-tab="serial" role="tab">Serial</button>
+        <button class="tab" data-tab="plot" role="tab">Plot</button>
+        <button id="btnCollapse" class="collapse" title="Hide panel">›</button>
+      </nav>
+
+      <div class="pane active" id="pane-code">
+        <div class="pane-tools">
+          <span id="codeInfo" class="muted">C++ updates as you move blocks. Click a line to find its block.</span>
+          <span class="grow"></span>
+          <button id="btnCopy" class="mini">Copy</button>
+          <button id="btnIde" class="mini">Open in Arduino IDE</button>
+        </div>
+        <div id="warnings" class="warnings hidden"></div>
+        <pre id="code" tabindex="0"></pre>
+      </div>
+
+      <div class="pane" id="pane-serial">
+        <div class="pane-tools">
+          <select id="serialPort" aria-label="Serial port"></select>
+          <select id="serialBaud" aria-label="Baud rate">
+            <option>9600</option><option>57600</option><option selected>115200</option>
+          </select>
+          <button id="btnSerial" class="mini">Connect</button>
+          <span class="grow"></span>
+          <button id="btnSerialClear" class="mini">Clear</button>
+        </div>
+        <pre id="serialOut"></pre>
+        <form id="serialForm" class="send">
+          <input id="serialIn" placeholder="Send a line to the board…" autocomplete="off">
+          <button class="mini" type="submit">Send</button>
+        </form>
+      </div>
+
+      <div class="pane" id="pane-plot">
+        <div class="pane-tools">
+          <span class="muted">Numbers printed to serial are plotted live. Print "a,b,c" to plot several lines.</span>
+          <span class="grow"></span>
+          <button id="btnPlotClear" class="mini">Clear</button>
+        </div>
+        <canvas id="plot"></canvas>
+        <div id="plotLegend"></div>
+      </div>
+    </aside>
+  </main>
+
+  <footer id="progress">
+    <ol class="steps">
+      <li data-step="building">Building</li>
+      <li data-step="finding">Finding board</li>
+      <li data-step="uploading">Uploading</li>
+      <li data-step="checking">Checking</li>
+    </ol>
+    <div id="progressMsg" class="msg">Ready.</div>
+    <div id="sizes" class="sizes"></div>
+    <button id="btnLog" class="mini">Details</button>
+  </footer>
+
+  <div id="logDrawer" class="drawer hidden">
+    <div class="drawer-head"><strong>Build and upload log</strong>
+      <span class="grow"></span>
+      <button id="btnCopyLog" class="mini">Copy details</button>
+      <button id="btnCloseLog" class="mini">Close</button>
+    </div>
+    <pre id="log"></pre>
+  </div>
+
+  <!-- dialogs -->
+  <dialog id="dlgStarters" class="dlg">
+    <h2>Starter projects</h2>
+    <p class="muted">Pick one to open it. Your current project will be replaced.</p>
+    <div id="starterGrid" class="grid"></div>
+    <div class="dlg-actions"><button class="mini" data-close>Cancel</button></div>
+  </dialog>
+
+  <dialog id="dlgMaker" class="dlg wide">
+    <h2>Block Maker</h2>
+    <p class="muted">Make your own block from a little C++. Use <code>{{NAME}}</code> in the code for an input, and <code>{{WAIT_MS:100}}</code> to wait without freezing other scripts.</p>
+    <div class="maker">
+      <div class="maker-form">
+        <label>Existing blocks <select id="mkExisting"><option value="">— new block —</option></select></label>
+        <div class="row2">
+          <label>Block id <input id="mkId" placeholder="buzzer_beep"></label>
+          <label>Shape <select id="mkShape">
+            <option value="statement">Stack block</option><option value="value">Number / text reporter</option><option value="boolean">True/false</option>
+          </select></label>
+        </div>
+        <label>Label (use %NAME for inputs) <input id="mkLabel" placeholder="beep buzzer on pin %PIN for %MS ms"></label>
+        <div class="inputs-head"><strong>Inputs</strong><button id="mkAddInput" class="mini" type="button">+ Add input</button></div>
+        <div id="mkInputs"></div>
+        <label>#include lines <input id="mkInclude" placeholder="<DHT.h>"></label>
+        <label>Global code (once per project) <textarea id="mkGlobal" rows="2"></textarea></label>
+        <label>Setup code (once, in setup) <textarea id="mkSetup" rows="2" placeholder="pinMode({{PIN}}, OUTPUT);"></textarea></label>
+        <label>Code at each use <textarea id="mkCode" rows="3" placeholder="tone({{PIN}}, 1000, {{MS}});"></textarea></label>
+        <label>Arduino libraries (comma separated) <input id="mkLibs" placeholder="DHT sensor library@1.4.6"></label>
+      </div>
+      <div class="maker-preview">
+        <strong>Preview</strong>
+        <div id="mkPreview"></div>
+        <div id="mkErrors" class="errors"></div>
+      </div>
+    </div>
+    <div class="dlg-actions">
+      <button id="mkDelete" class="mini danger" type="button">Delete</button>
+      <span class="grow"></span>
+      <button class="mini" data-close>Cancel</button>
+      <button id="mkSave" class="primary" type="button">Save block</button>
+    </div>
+  </dialog>
+
+  <dialog id="dlgPins" class="dlg">
+    <h2 id="pinsTitle">Pin map</h2>
+    <p class="muted">Coloured pins can do more than on/off. Greyed pins are already used by a part in your project.</p>
+    <div id="pinGrid" class="pin-grid"></div>
+    <div class="legend">
+      <span class="chip pwm">PWM (dim / speed / servo)</span><span class="chip analog">Analog in</span>
+      <span class="chip i2c">I2C (LCD, NeoDriver)</span><span class="chip used">Used</span>
+    </div>
+    <div class="dlg-actions"><button class="mini" data-close>Close</button></div>
+  </dialog>
+
+  <dialog id="dlgBootloader" class="dlg">
+    <h2>Repair bootloader</h2>
+    <p>Use this when a board never answers on any setting, or reports signature <code>0x000000</code>. You need a second, working Arduino Uno as a programmer.</p>
+    <ol class="howto">
+      <li>Open the Arduino IDE on the <strong>helper Uno</strong> and upload <em>File → Examples → 11.ArduinoISP → ArduinoISP</em>.</li>
+      <li>Wire helper → broken board: <strong>D13→D13, D12→D12, D11→D11, D10→RESET, 5V→5V, GND→GND</strong> (on a Mega: D52, D50, D51, RESET).</li>
+      <li>Put a 10 µF capacitor between RESET and GND on the helper Uno (stripe to GND).</li>
+      <li>Pick the <strong>broken</strong> board type in the board menu, choose the helper's port below and click Burn.</li>
+    </ol>
+    <label>Helper's port <select id="blPort"></select></label>
+    <div class="dlg-actions"><button class="mini" data-close>Cancel</button><button id="blBurn" class="primary">Burn bootloader</button></div>
+  </dialog>
+
+  <dialog id="dlgAbout" class="dlg">
+    <h2>Block Arduino <span id="aboutVersion"></span></h2>
+    <p>Program an Arduino by snapping blocks together, like Scratch, with one-click Smart Upload.</p>
+    <p class="muted" id="aboutTools"></p>
+    <p class="muted">Built with Electron, Blockly and arduino-cli. Open source.</p>
+    <div class="dlg-actions"><button class="mini" data-close>Close</button></div>
+  </dialog>
+
+  <dialog id="dlgCode" class="dlg wide">
+    <h2>C++ code</h2>
+    <p class="muted">Avoid <code>delay()</code> — it freezes every other script. Use a wait block instead.</p>
+    <textarea id="codeEditor" spellcheck="false" rows="16"></textarea>
+    <div class="dlg-actions"><button class="mini" data-close>Cancel</button><button id="codeSave" class="primary">Done</button></div>
+  </dialog>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="../../node_modules/blockly/blockly_compressed.js"></script>
+  <script src="../../node_modules/blockly/blocks_compressed.js"></script>
+  <script src="../../node_modules/blockly/msg/en.js"></script>
+  <script src="../shared/boards.js"></script>
+  <script src="blocks.js"></script>
+  <script src="custom-blocks.js"></script>
+  <script src="generator.js"></script>
+  <script src="starters.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
