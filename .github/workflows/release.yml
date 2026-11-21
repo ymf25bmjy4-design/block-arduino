@@ -1,28 +1,53 @@
 # Builds Block Arduino for macOS, Windows and Linux on native runners.
-# Push a tag like v0.2.0 to build and publish a GitHub Release; the
-# downloads page (GitHub Pages) lists every release automatically.
+#
+# Releasing: bump "version" in package.json, add a matching section to
+# CHANGELOG.md and push to main. If no release exists yet for that version,
+# this workflow tags the commit (vX.Y.Z), publishes a GitHub Release with all
+# installers and refreshes the downloads page. Pushing a vX.Y.Z tag works too.
 name: Build and release
 
 on:
   push:
-    tags: ['v*']
     branches: [main]
-    paths-ignore: ['docs/**', '*.md']
+    tags: ['v*']
+    paths-ignore: ['docs/**', 'README.md']
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      release: ${{ steps.ver.outputs.release }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
       - run: npm test
+      - name: Is this a new version?
+        id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then echo "release=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [[ "$GITHUB_REF" == refs/tags/v* && "$GITHUB_REF_NAME" != "v$VER" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $VER"; exit 1
+          fi
+          if gh release view "v$VER" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v$VER already exists — building only."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Will publish v$VER."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
 
   build:
     needs: test
@@ -64,8 +89,8 @@ jobs:
             dist/*.tar.gz
 
   release:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test, build]
+    if: needs.test.outputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,13 +98,20 @@ jobs:
         with: { path: artifacts, merge-multiple: true }
       - name: Release notes from CHANGELOG.md
         run: |
-          VER="${GITHUB_REF_NAME#v}"
+          VER="${{ needs.test.outputs.version }}"
           awk -v v="$VER" '$0 ~ "^## \\[?v?"v"\\]?" {f=1; next} /^## / {f=0} f' CHANGELOG.md > notes.md
-          [ -s notes.md ] || echo "Block Arduino $GITHUB_REF_NAME" > notes.md
+          [ -s notes.md ] || echo "Block Arduino v$VER" > notes.md
           cat notes.md
+          ls -la artifacts
       - uses: softprops/action-gh-release@v2
         with:
-          name: Block Arduino ${{ github.ref_name }}
+          tag_name: v${{ needs.test.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: Block Arduino v${{ needs.test.outputs.version }}
           body_path: notes.md
           files: artifacts/*
           fail_on_unmatched_files: true
+      - name: Refresh the downloads page
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main

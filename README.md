@@ -35,19 +35,18 @@ Runs three suites:
 
 ## Releasing a new version
 
-Releases are built by GitHub Actions on real macOS, Windows and Linux machines.
+Releases are built by GitHub Actions on real macOS, Windows and Linux machines, and every version stays listed on the downloads page.
 
 1. Bump `version` in `package.json` (e.g. `0.2.0`).
 2. Add a `## [0.2.0] - YYYY-MM-DD` section at the top of `CHANGELOG.md`. It becomes the release notes.
-3. Commit, then tag and push:
+3. Commit and push to `main`:
    ```bash
    git commit -am "Release 0.2.0"
-   git tag v0.2.0
-   git push origin main --tags
+   git push
    ```
-4. The **Build and release** workflow tests, packages all platforms and publishes the GitHub Release. The downloads page lists it automatically.
+4. The **Build and release** workflow runs the tests and packages all three platforms. Because no `v0.2.0` release exists yet, it tags the commit, publishes the GitHub Release with every installer, and refreshes the downloads page.
 
-Pushes to `main` and pull requests also build all platforms (as workflow artifacts) without publishing.
+Pushes that don't change the version, and pull requests, still build all platforms (download them from the workflow run's artifacts) but publish nothing. Pushing a `v0.2.0` tag yourself also works, as long as it matches `package.json`.
 
 ## Project layout
 
