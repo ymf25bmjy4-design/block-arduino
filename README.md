@@ -9,7 +9,7 @@ Program an Arduino by snapping blocks together, like Scratch, and click one butt
 - **Always see the C++.** A live code panel shows the generated sketch; click a line to find the block that made it.
 - **Custom blocks.** Drop in raw C++, or build reusable blocks with the Block Maker.
 
-**Downloads and every version:** see the project's GitHub Pages site (Settings → Pages) or the [Releases](../../releases) page.
+**Downloads and every version:** https://ymf25bmjy4-design.github.io/block-arduino/ (or the [Releases](https://github.com/ymf25bmjy4-design/block-arduino/releases) page).
 
 ## Run from source
 

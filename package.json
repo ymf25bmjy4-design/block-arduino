@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Program an Arduino by snapping blocks together, like Scratch, with one-click Smart Upload.",
   "main": "src/main/main.js",
-  "homepage": "https://github.com/",
+  "homepage": "https://ymf25bmjy4-design.github.io/block-arduino/",
   "author": {
     "name": "Block Arduino contributors",
     "email": "noreply@example.com"
@@ -132,5 +132,9 @@
     },
     "publish": [],
     "afterPack": "build/after-pack.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ymf25bmjy4-design/block-arduino.git"
   }
 }

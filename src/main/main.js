@@ -115,7 +115,7 @@ function buildMenu() {
     ] },
     { label: 'Help', submenu: [
       { label: 'About Block Arduino', click: cmd('about') },
-      { label: 'Website and Downloads', click: () => shell.openExternal(app.homepageUrl || 'https://github.com') },
+      { label: 'Website and Downloads', click: () => shell.openExternal(require('../../package.json').homepage) },
     ] },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
